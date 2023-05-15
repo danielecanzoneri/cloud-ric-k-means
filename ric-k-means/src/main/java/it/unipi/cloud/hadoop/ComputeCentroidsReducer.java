@@ -5,4 +5,5 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.Reducer;
 
 public class ComputeCentroidsReducer extends Reducer<LongWritable, PointWritable, LongWritable, PointWritable> {
+
 }
