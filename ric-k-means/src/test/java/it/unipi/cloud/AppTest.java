@@ -1,4 +1,4 @@
-package org.example;
+package it.unipi.cloud;
 
 import junit.framework.Test;
 import junit.framework.TestCase;

@@ -2,12 +2,12 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.example</groupId>
-  <artifactId>Ric-K-means</artifactId>
+  <groupId>it.unipi.cloud</groupId>
+  <artifactId>ric-k-means</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>Ric-K-means</name>
+  <name>ric-k-means</name>
   <url>http://maven.apache.org</url>
 
   <properties>
