@@ -2,27 +2,39 @@ package it.unipi.cloud.hadoop;
 
 import it.unipi.cloud.model.PointWritable;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
 import java.util.Arrays;
 
-public class ComputeDistanceMapper extends Mapper<Object, Text, IntWritable, PointWritable> {
+public class ComputeDistanceMapper extends Mapper<LongWritable, Text, LongWritable, PointWritable> {
     // ..., ..., centroid index, point
 
-    private final PointWritable[] centroids;
+    private PointWritable[] centroids;
 
     public ComputeDistanceMapper(PointWritable[] centroids) {
         this.centroids = centroids;
     }
 
+    @Override
+    protected void setup(Context context) throws IOException, InterruptedException {
+        String centroidsRaw = context.getConfiguration().get("centroids");
+        String[] centroidsString = centroidsRaw.split("\n");
+
+        centroids = new PointWritable[centroidsString.length];
+        for (int i=0; i < centroidsString.length; i++)
+            centroids[i] = new PointWritable(centroidsString[i]);
+    }
+
     public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
-        double[] attributes = Arrays
+        /* double[] attributes = Arrays
                 .stream(value.toString().split(","))
                 .mapToDouble(Double::valueOf)
                 .toArray();
-        PointWritable point = new PointWritable(attributes);
+         */
+        PointWritable point = new PointWritable(value.toString());
 
         // For every centroid compute the distance
         // and return the index of the closest centroid
@@ -41,6 +53,6 @@ public class ComputeDistanceMapper extends Mapper<Object, Text, IntWritable, Poi
         if (bestCentroid == -1)
             throw new IOException("There has been an error in assigning the point to a cluster");
 
-        context.write(new IntWritable(bestCentroid), point);
+        context.write(new LongWritable(bestCentroid), point);
     }
 }

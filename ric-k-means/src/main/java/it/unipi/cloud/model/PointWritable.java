@@ -1,11 +1,13 @@
 package it.unipi.cloud.model;
 
 import org.apache.hadoop.io.Writable;
+import sun.jvm.hotspot.types.PointerType;
 
 import java.awt.*;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
@@ -18,10 +20,23 @@ public class PointWritable implements Writable {
     // Num of aggregated points combined by Combiner
     int count;
 
+    public PointWritable() {
+    }
+
     public PointWritable(double[] attributes) {
         this.numAttributes = attributes.length;
         this.attributes = attributes;
         this.count = 1;
+    }
+
+    public PointWritable(String attributesString) {
+        String[] split = attributesString.split(",");
+
+        numAttributes = split.length;
+        attributes = new double[numAttributes];
+
+        for (int i=0; i < split.length; i++)
+            attributes[i] = Double.parseDouble(split[i]);
     }
 
     public void write(DataOutput out) throws IOException {
@@ -41,11 +56,39 @@ public class PointWritable implements Writable {
         count = in.readInt();
     }
 
+    public void sum(PointWritable point) {
+        if (point.numAttributes != this.numAttributes)
+            throw new UnsupportedOperationException("Points have different number of attributes");
+
+        for (int i = 0; i < numAttributes; i++)
+            this.attributes[i] += point.attributes[i];
+
+        this.count += point.count;
+    }
+
+    public void computeMean() {
+        for (int i=0; i < numAttributes; i++)
+            attributes[i] /= count;
+    }
+
     public double distanceFrom(PointWritable point) {
+        if (point.numAttributes != this.numAttributes)
+            throw new UnsupportedOperationException("Points have different number of attributes");
+
         double sum = 0;
         for (int i = 0; i < numAttributes; i++)
             sum += pow(point.attributes[i] - this.attributes[i], 2);
 
         return sqrt(sum);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder out = new StringBuilder();
+
+        for (double attribute : attributes)
+            out.append(attribute).append(",");
+
+        return out.substring(0, out.length() - 1);
     }
 }
