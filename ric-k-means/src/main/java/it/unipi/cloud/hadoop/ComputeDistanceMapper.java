@@ -14,13 +14,9 @@ public class ComputeDistanceMapper extends Mapper<LongWritable, Text, LongWritab
 
     private PointWritable[] centroids;
 
-    public ComputeDistanceMapper(PointWritable[] centroids) {
-        this.centroids = centroids;
-    }
-
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
-        String centroidsRaw = context.getConfiguration().get("centroids");
+        String centroidsRaw = context.getConfiguration().get("kmeans.centroids");
         String[] centroidsString = centroidsRaw.split("\n");
 
         centroids = new PointWritable[centroidsString.length];
@@ -28,7 +24,8 @@ public class ComputeDistanceMapper extends Mapper<LongWritable, Text, LongWritab
             centroids[i] = new PointWritable(centroidsString[i]);
     }
 
-    public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+    @Override
+    public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
         /* double[] attributes = Arrays
                 .stream(value.toString().split(","))
                 .mapToDouble(Double::valueOf)
