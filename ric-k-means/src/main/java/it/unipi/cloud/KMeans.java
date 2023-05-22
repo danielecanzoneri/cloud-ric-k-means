@@ -34,42 +34,51 @@ public class KMeans {
         System.out.println("args[1]: <input>="+otherArgs[1]);
         System.out.println("args[2]: <output>="+otherArgs[2]);
 
-        Job job = Job.getInstance(conf, "K-Means");
-        job.setJarByClass(KMeans.class);
-
-        // set mapper/combiner/reducer
-        job.setMapperClass(ComputeDistanceMapper.class);
-        job.setCombinerClass(AggregateSamplesCombiner.class);
-        job.setReducerClass(ComputeCentroidsReducer.class);
-
-        // define mapper's output key-value
-        job.setMapOutputKeyClass(LongWritable.class);
-        job.setMapOutputValueClass(PointWritable.class);
-
-        // define reducer's output key-value
-        job.setOutputKeyClass(LongWritable.class);
-        job.setOutputValueClass(Text.class);
 
         // set the number of clusters to find
         int numClusters = Integer.parseInt(otherArgs[0]);
         int numAttributes = 50;
-        /*
-        try (BufferedReader reader = new BufferedReader(new FileReader(otherArgs[1]))) {
-            String firstLine = reader.readLine();
-            numAttributes = firstLine.split(",").length;
-        }
-        */
-        job.getConfiguration().setInt("kmeans.num_clusters", numClusters);
-        job.getConfiguration().set("kmeans.centroids", chooseCentroids(numClusters, numAttributes));
 
-        // define I/O
-        FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
-        FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
+        String oldCentroids="", newCentroids="";
+        newCentroids = chooseCentroids(numClusters, numAttributes);
+        do {
+            Job job = Job.getInstance(conf, "K-Means");
+            job.setJarByClass(KMeans.class);
 
-        job.setInputFormatClass(TextInputFormat.class);
-        job.setOutputFormatClass(TextOutputFormat.class);
+            // set mapper/combiner/reducer
+            job.setMapperClass(ComputeDistanceMapper.class);
+            job.setCombinerClass(AggregateSamplesCombiner.class);
+            job.setReducerClass(ComputeCentroidsReducer.class);
 
-        System.exit(job.waitForCompletion(true) ? 0 : 1);
+            // define mapper's output key-value
+            job.setMapOutputKeyClass(LongWritable.class);
+            job.setMapOutputValueClass(PointWritable.class);
+
+            // define reducer's output key-value
+            job.setOutputKeyClass(LongWritable.class);
+            job.setOutputValueClass(Text.class);
+            /*
+            try (BufferedReader reader = new BufferedReader(new FileReader(otherArgs[1]))) {
+                String firstLine = reader.readLine();
+                numAttributes = firstLine.split(",").length;
+            }
+            */
+            job.getConfiguration().setInt("kmeans.num_clusters", numClusters);
+            job.getConfiguration().set("kmeans.centroids", newCentroids);
+
+            // define I/O
+            FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
+            FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
+
+            job.setInputFormatClass(TextInputFormat.class);
+            job.setOutputFormatClass(TextOutputFormat.class);
+
+            job.waitForCompletion(true);
+
+            oldCentroids = newCentroids;
+            newCentroids = Util.readCentroids(otherArgs[2]);
+
+        } while (!Util.stoppingCondition(oldCentroids, newCentroids));
     }
 
     private static String chooseCentroids(int numCentroids, int numAttributes) {

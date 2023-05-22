@@ -14,13 +14,15 @@ import static java.lang.Math.sqrt;
 
 public class PointWritable implements Writable {
 
-    int numAttributes;
-    double[] attributes;
+    private int numAttributes;
+    private double[] attributes;
 
     // Num of aggregated points combined by Combiner
-    int count;
+    private int count;
 
     public PointWritable() {
+        this.numAttributes = 0;
+        this.count = 1;
     }
 
     public PointWritable(double[] attributes) {
@@ -34,9 +36,34 @@ public class PointWritable implements Writable {
 
         numAttributes = split.length;
         attributes = new double[numAttributes];
+        count = 1;
 
         for (int i=0; i < split.length; i++)
             attributes[i] = Double.parseDouble(split[i]);
+    }
+
+    public int getNumAttributes() {
+        return numAttributes;
+    }
+
+    public void setNumAttributes(int numAttributes) {
+        this.numAttributes = numAttributes;
+    }
+
+    public double[] getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(double[] attributes) {
+        this.attributes = attributes;
+    }
+
+    public int getCount() {
+        return count;
+    }
+
+    public void setCount(int count) {
+        this.count = count;
     }
 
     public void write(DataOutput out) throws IOException {

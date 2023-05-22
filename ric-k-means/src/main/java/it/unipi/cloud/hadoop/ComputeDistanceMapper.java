@@ -31,6 +31,9 @@ public class ComputeDistanceMapper extends Mapper<LongWritable, Text, LongWritab
                 .mapToDouble(Double::valueOf)
                 .toArray();
          */
+        if (value.toString().equals("\n"))
+            throw new RuntimeException("Empty row!!!!" + value);
+
         PointWritable point = new PointWritable(value.toString());
 
         // For every centroid compute the distance

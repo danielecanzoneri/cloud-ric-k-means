@@ -1,5 +1,6 @@
 package it.unipi.cloud.hadoop;
 
+import it.unipi.cloud.Util;
 import it.unipi.cloud.model.PointWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -16,9 +17,9 @@ public class ComputeCentroidsReducer extends Reducer<LongWritable, PointWritable
         PointWritable centroid = iterator.next();
 
         while (iterator.hasNext())
-            centroid.sum(iterator.next());
+            centroid = Util.sum(centroid, iterator.next());
 
-        centroid.computeMean();
+        centroid = Util.computeMean(centroid);
 
         context.write(key, new Text(centroid.toString()));
     }
