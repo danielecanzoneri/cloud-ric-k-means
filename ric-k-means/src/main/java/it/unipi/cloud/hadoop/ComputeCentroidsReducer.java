@@ -1,6 +1,5 @@
 package it.unipi.cloud.hadoop;
 
-import it.unipi.cloud.Util;
 import it.unipi.cloud.model.PointWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -14,12 +13,16 @@ public class ComputeCentroidsReducer extends Reducer<LongWritable, PointWritable
     @Override
     protected void reduce(LongWritable key, Iterable<PointWritable> values, Context context) throws IOException, InterruptedException {
         Iterator<PointWritable> iterator = values.iterator();
-        PointWritable centroid = iterator.next();
+        PointWritable copy = iterator.next();
+
+        PointWritable centroid = new PointWritable();
+        centroid.setAttributes(copy.getAttributes());
+        centroid.setCount(copy.getCount());
 
         while (iterator.hasNext())
-            centroid = Util.sum(centroid, iterator.next());
+            centroid.sum(iterator.next());
 
-        centroid = Util.computeMean(centroid);
+        centroid.computeMean();
 
         context.write(key, new Text(centroid.toString()));
     }

@@ -1,13 +1,11 @@
 package it.unipi.cloud.hadoop;
 
 import it.unipi.cloud.model.PointWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 public class ComputeDistanceMapper extends Mapper<LongWritable, Text, LongWritable, PointWritable> {
     // ..., ..., centroid index, point
@@ -15,8 +13,8 @@ public class ComputeDistanceMapper extends Mapper<LongWritable, Text, LongWritab
     private PointWritable[] centroids;
 
     @Override
-    protected void setup(Context context) throws IOException, InterruptedException {
-        String centroidsRaw = context.getConfiguration().get("kmeans.centroids");
+    protected void setup(Context context) {
+        String centroidsRaw = context.getConfiguration().get("k-means.centroids");
         String[] centroidsString = centroidsRaw.split("\n");
 
         centroids = new PointWritable[centroidsString.length];
@@ -31,8 +29,6 @@ public class ComputeDistanceMapper extends Mapper<LongWritable, Text, LongWritab
                 .mapToDouble(Double::valueOf)
                 .toArray();
          */
-        if (value.toString().equals("\n"))
-            throw new RuntimeException("Empty row!!!!" + value);
 
         PointWritable point = new PointWritable(value.toString());
 

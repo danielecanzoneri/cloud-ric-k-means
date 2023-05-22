@@ -1,9 +1,7 @@
 package it.unipi.cloud.model;
 
 import org.apache.hadoop.io.Writable;
-import sun.jvm.hotspot.types.PointerType;
 
-import java.awt.*;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -34,20 +32,13 @@ public class PointWritable implements Writable {
     public PointWritable(String attributesString) {
         String[] split = attributesString.split(",");
 
-        numAttributes = split.length;
-        attributes = new double[numAttributes];
+        attributes = Arrays
+                .stream(attributesString.split(","))
+                .mapToDouble(Double::valueOf)
+                .toArray();
+
+        numAttributes = attributes.length;
         count = 1;
-
-        for (int i=0; i < split.length; i++)
-            attributes[i] = Double.parseDouble(split[i]);
-    }
-
-    public int getNumAttributes() {
-        return numAttributes;
-    }
-
-    public void setNumAttributes(int numAttributes) {
-        this.numAttributes = numAttributes;
     }
 
     public double[] getAttributes() {
@@ -56,6 +47,7 @@ public class PointWritable implements Writable {
 
     public void setAttributes(double[] attributes) {
         this.attributes = attributes;
+        this.numAttributes = attributes.length;
     }
 
     public int getCount() {

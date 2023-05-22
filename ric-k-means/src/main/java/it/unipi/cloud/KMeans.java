@@ -6,6 +6,8 @@ import it.unipi.cloud.hadoop.ComputeCentroidsReducer;
 import it.unipi.cloud.hadoop.ComputeDistanceMapper;
 import it.unipi.cloud.model.PointWritable;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -16,11 +18,9 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
-import java.util.Random;
+import java.io.File;
 
 public class KMeans {
-
-    private static final Random random = new Random();
 
     public static void main(String[] args) throws Exception {
 
@@ -37,11 +37,15 @@ public class KMeans {
 
         // set the number of clusters to find
         int numClusters = Integer.parseInt(otherArgs[0]);
-        int numAttributes = 50;
 
-        String oldCentroids="", newCentroids="";
-        newCentroids = chooseCentroids(numClusters, numAttributes);
+        String oldCentroids, newCentroids;
+        newCentroids = Util.chooseCentroids(new Path(otherArgs[1]), numClusters);
+
+        int iter = 0;
         do {
+            String outputPath = otherArgs[2] + "/temp";
+            iter++;
+
             Job job = Job.getInstance(conf, "K-Means");
             job.setJarByClass(KMeans.class);
 
@@ -57,65 +61,29 @@ public class KMeans {
             // define reducer's output key-value
             job.setOutputKeyClass(LongWritable.class);
             job.setOutputValueClass(Text.class);
-            /*
-            try (BufferedReader reader = new BufferedReader(new FileReader(otherArgs[1]))) {
-                String firstLine = reader.readLine();
-                numAttributes = firstLine.split(",").length;
-            }
-            */
-            job.getConfiguration().setInt("kmeans.num_clusters", numClusters);
-            job.getConfiguration().set("kmeans.centroids", newCentroids);
+
+            // Set startup parameters for a k-means iteration
+            job.getConfiguration().set("k-means.centroids", newCentroids);
 
             // define I/O
             FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
-            FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
+            FileOutputFormat.setOutputPath(job, new Path(outputPath));
 
             job.setInputFormatClass(TextInputFormat.class);
             job.setOutputFormatClass(TextOutputFormat.class);
 
             job.waitForCompletion(true);
 
+            // Keep old centroids in memory to check for completion
             oldCentroids = newCentroids;
-            newCentroids = Util.readCentroids(otherArgs[2]);
+            newCentroids = Util.readCentroids(outputPath);
 
         } while (!Util.stoppingCondition(oldCentroids, newCentroids));
-    }
 
-    private static String chooseCentroids(int numCentroids, int numAttributes) {
-        StringBuilder centroids = new StringBuilder();
+        // Clean tmp directories
+        FileSystem fs = FileSystem.get(conf);
 
-        for (int c = 0; c < numCentroids; c++) {
-            for (int attr = 0; attr < numAttributes; attr++) {
-                centroids.append(random.nextDouble() * 5);
-                if (attr < numAttributes-1)
-                    centroids.append(",");
-            }
-            centroids.append("\n");
-        }
-
-        return centroids.toString();
-    }
-
-    private String chooseCentroids(Path datasetPath, int numCentroids) {
-        /*
-        List<String> randomRows = new ArrayList<>();
-        Random random = new Random();
-        String line;
-        int totalRows = 0;
-        while ((line = reader.readLine()) != null) {
-            totalRows++;
-            if (randomRows.size() < k) {
-                randomRows.add(line);
-            } else {
-                int randomIndex = random.nextInt(totalRows);
-                if (randomIndex < k) {
-                    randomRows.set(randomIndex, line);
-                }
-            }
-        }
-
-        return randomRows;
-         */
-        return null;
+        FileUtil.copy(fs, new Path(otherArgs[2] + "/temp" + (iter-1) + "/part-r-00000"),
+                fs, new Path(otherArgs[2] + "/centroids.txt"), false, conf);
     }
 }
