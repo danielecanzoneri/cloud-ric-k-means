@@ -12,33 +12,23 @@ import static java.lang.Math.sqrt;
 
 public class PointWritable implements Writable {
 
-    private int numAttributes;
     private double[] attributes;
 
     // Num of aggregated points combined by Combiner
     private int count;
 
     public PointWritable() {
-        this.numAttributes = 0;
+        this.attributes = new double[0];
         this.count = 1;
     }
 
-    public PointWritable(double[] attributes) {
-        this.numAttributes = attributes.length;
-        this.attributes = attributes;
-        this.count = 1;
-    }
-
-    public PointWritable(String attributesString) {
-        String[] split = attributesString.split(",");
-
-        attributes = Arrays
-                .stream(attributesString.split(","))
+    public PointWritable(String attributes) {
+        this.attributes = Arrays
+                .stream(attributes.split(","))
                 .mapToDouble(Double::valueOf)
                 .toArray();
 
-        numAttributes = attributes.length;
-        count = 1;
+        this.count = 1;
     }
 
     public double[] getAttributes() {
@@ -47,7 +37,6 @@ public class PointWritable implements Writable {
 
     public void setAttributes(double[] attributes) {
         this.attributes = attributes;
-        this.numAttributes = attributes.length;
     }
 
     public int getCount() {
@@ -59,7 +48,7 @@ public class PointWritable implements Writable {
     }
 
     public void write(DataOutput out) throws IOException {
-        out.writeInt(numAttributes);
+        out.writeInt(attributes.length);
         for (double attr: attributes)
             out.writeDouble(attr);
 
@@ -67,8 +56,9 @@ public class PointWritable implements Writable {
     }
 
     public void readFields(DataInput in) throws IOException {
-        numAttributes = in.readInt();
+        int numAttributes = in.readInt();
         attributes = new double[numAttributes];
+
         for (int i=0; i < numAttributes; i++)
             attributes[i] = in.readDouble();
 
@@ -76,30 +66,35 @@ public class PointWritable implements Writable {
     }
 
     public void sum(PointWritable point) {
-        if (point.numAttributes != this.numAttributes)
-            throw new UnsupportedOperationException("Points have different number of attributes: this=" + numAttributes + " other:" + point.numAttributes);
+        if (point.attributes.length != this.attributes.length)
+            throw new UnsupportedOperationException("Points have different number of attributes: this=" + this.attributes.length +
+                    ", other:" + point.attributes.length);
 
+        int numAttributes = attributes.length;
         for (int i = 0; i < numAttributes; i++)
             this.attributes[i] += point.attributes[i];
 
         this.count += point.count;
     }
 
-    public void computeMean() {
-        for (int i=0; i < numAttributes; i++)
+    public void average() {
+        for (int i=0; i < attributes.length; i++)
             attributes[i] /= count;
     }
 
     public double distanceFrom(PointWritable point) {
-        if (point.numAttributes != this.numAttributes)
-            throw new UnsupportedOperationException("Points have different number of attributes: this=" + numAttributes + " other:" + point.numAttributes);
+        if (point.attributes.length != this.attributes.length)
+            throw new UnsupportedOperationException("Points have different number of attributes: this=" + this.attributes.length +
+                    "other:" + point.attributes.length);
 
         double sum = 0;
+        int numAttributes = attributes.length;
         for (int i = 0; i < numAttributes; i++)
             sum += pow(point.attributes[i] - this.attributes[i], 2);
 
         return sqrt(sum);
     }
+
 
     @Override
     public String toString() {
@@ -109,5 +104,13 @@ public class PointWritable implements Writable {
             out.append(attribute).append(",");
 
         return out.substring(0, out.length() - 1);
+    }
+
+    public static PointWritable copy(PointWritable point) {
+        PointWritable copy = new PointWritable();
+        copy.setAttributes(point.getAttributes());
+        copy.setCount(point.getCount());
+
+        return copy;
     }
 }

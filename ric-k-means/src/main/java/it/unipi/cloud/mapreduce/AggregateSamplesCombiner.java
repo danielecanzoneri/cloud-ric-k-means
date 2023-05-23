@@ -1,4 +1,4 @@
-package it.unipi.cloud.hadoop;
+package it.unipi.cloud.mapreduce;
 
 import it.unipi.cloud.model.PointWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -12,15 +12,14 @@ public class AggregateSamplesCombiner extends Reducer<LongWritable, PointWritabl
     @Override
     protected void reduce(LongWritable key, Iterable<PointWritable> values, Context context) throws IOException, InterruptedException {
         Iterator<PointWritable> iterator = values.iterator();
-        PointWritable copy = iterator.next();
 
-        PointWritable aggregatePoint = new PointWritable();
-        aggregatePoint.setAttributes(copy.getAttributes());
-        aggregatePoint.setCount(copy.getCount());
+        // This is done in order to avoid some weird memory optimization of Hadoop
+        // that prevents correct computations
+        PointWritable aggregate = PointWritable.copy(iterator.next());
 
         while (iterator.hasNext())
-            aggregatePoint.sum(iterator.next());
+            aggregate.sum(iterator.next());
 
-        context.write(key, aggregatePoint);
+        context.write(key, aggregate);
     }
 }

@@ -1,4 +1,4 @@
-package it.unipi.cloud.hadoop;
+package it.unipi.cloud.mapreduce;
 
 import it.unipi.cloud.model.PointWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -8,7 +8,6 @@ import org.apache.hadoop.mapreduce.Mapper;
 import java.io.IOException;
 
 public class ComputeDistanceMapper extends Mapper<LongWritable, Text, LongWritable, PointWritable> {
-    // ..., ..., centroid index, point
 
     private PointWritable[] centroids;
 
@@ -24,12 +23,6 @@ public class ComputeDistanceMapper extends Mapper<LongWritable, Text, LongWritab
 
     @Override
     public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-        /* double[] attributes = Arrays
-                .stream(value.toString().split(","))
-                .mapToDouble(Double::valueOf)
-                .toArray();
-         */
-
         PointWritable point = new PointWritable(value.toString());
 
         // For every centroid compute the distance
