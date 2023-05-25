@@ -130,7 +130,8 @@ public class Util {
             throw new FileNotFoundException("File does not exist: " + centroidsPath);
         }
 
-        // fs.delete(new Path(centroidsPath), true);
+        // Delete temp folder
+        fs.delete(new Path(centroidsPath), true);
         fs.close();
 
         return centroids.toString();

@@ -6,8 +6,8 @@ import it.unipi.cloud.mapreduce.ComputeDistanceMapper;
 import it.unipi.cloud.model.PointWritable;
 import it.unipi.cloud.util.Util;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -18,25 +18,37 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+
 public class KMeans {
+
+    private static final Configuration conf = new Configuration();
 
     public static void main(String[] args) throws Exception {
 
-        Configuration conf = new Configuration();
-
         String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-        if (otherArgs.length != 3) {
+        if (otherArgs.length < 3) {
             System.err.println("Usage: KMeans <number_of_clusters> <input> <output>");
             System.exit(1);
         }
         System.out.println("args[0]: <number_of_clusters>="+otherArgs[0]);
         System.out.println("args[1]: <input>="+otherArgs[1]);
         System.out.println("args[2]: <output>="+otherArgs[2]);
+        boolean useCombiner = true;
+        if (otherArgs.length == 4) {
+            System.out.println("args[3]: <use_of_combiner>="+otherArgs[3]);
+            useCombiner = Boolean.parseBoolean(otherArgs[3]);
+        }
 
         String datasetPath = otherArgs[1];
 
         // set the number of clusters to find
         int numClusters = Integer.parseInt(otherArgs[0]);
+
+        // Record time to measure algorithm performances
+        long startTime = System.nanoTime();
 
         String oldCentroids, newCentroids;
         newCentroids = Util.chooseCentroids(datasetPath, numClusters);
@@ -53,7 +65,8 @@ public class KMeans {
 
             // set mapper/combiner/reducer
             job.setMapperClass(ComputeDistanceMapper.class);
-            job.setCombinerClass(AggregateSamplesCombiner.class);
+            if (useCombiner)
+                job.setCombinerClass(AggregateSamplesCombiner.class);
             job.setReducerClass(ComputeCentroidsReducer.class);
 
             // define mapper's output key-value
@@ -93,9 +106,29 @@ public class KMeans {
 
         } while (!Util.stoppingCondition(oldCentroids, newCentroids));
 
-        FileSystem fs = FileSystem.get(conf);
+        double timeInSeconds = (System.nanoTime() - startTime) / 1000000000.0;
 
-        FileUtil.copy(fs, new Path(otherArgs[2] + "/temp" + iter + "/part-r-00000"),
-                fs, new Path(otherArgs[2] + "/centroids.txt"), false, conf);
+        printStatistics(newCentroids, iter, timeInSeconds, otherArgs[2]);
+    }
+
+    private static void printStatistics(String centroids, int numIterations, double time, String output) throws IOException {
+        FileSystem fs = FileSystem.get(conf);
+        FSDataOutputStream out = fs.create(new Path(output + "/centroids.txt"), true);
+        BufferedWriter br = new BufferedWriter(new OutputStreamWriter(out));
+
+        br.write("Centroids");
+        br.newLine();
+        br.write(centroids);
+        br.newLine();
+
+        br.write("Number of iterations: ");
+        br.write(String.valueOf(numIterations));
+        br.newLine();
+        br.write("Average time for iteration: ");
+        br.write(String.valueOf(Math.round(time / numIterations * 1000) / 1000.0));
+        br.newLine();
+
+        br.close();
+        fs.close();
     }
 }
