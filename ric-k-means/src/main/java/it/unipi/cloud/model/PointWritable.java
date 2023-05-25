@@ -67,8 +67,8 @@ public class PointWritable implements Writable {
 
     public void sum(PointWritable point) {
         if (point.attributes.length != this.attributes.length)
-            throw new UnsupportedOperationException("Points have different number of attributes: this=" + this.attributes.length +
-                    ", other:" + point.attributes.length);
+            throw new UnsupportedOperationException("Points have different number of attributes: " +
+                    "this=" + this.attributes.length + ", other:" + point.attributes.length);
 
         int numAttributes = attributes.length;
         for (int i = 0; i < numAttributes; i++)
@@ -84,8 +84,8 @@ public class PointWritable implements Writable {
 
     public double distanceFrom(PointWritable point) {
         if (point.attributes.length != this.attributes.length)
-            throw new UnsupportedOperationException("Points have different number of attributes: this=" + this.attributes.length +
-                    "other:" + point.attributes.length);
+            throw new UnsupportedOperationException("Points have different number of attributes: " +
+                    "this=" + this.attributes.length + ", other:" + point.attributes.length);
 
         double sum = 0;
         int numAttributes = attributes.length;
@@ -94,7 +94,6 @@ public class PointWritable implements Writable {
 
         return sqrt(sum);
     }
-
 
     @Override
     public String toString() {

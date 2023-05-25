@@ -84,7 +84,7 @@ public class KMeans {
             int numNewCentroids = newCentroids.split("\n").length;
             if (numNewCentroids < numClusters) {
                 int emptyClusters = numClusters - numNewCentroids;
-                System.out.println(emptyClusters + " cluster" + (emptyClusters > 1 ? "s" : "") + " was empty, " +
+                System.out.println(emptyClusters + " cluster" + (emptyClusters > 1 ? "s are" : " is") + " empty, " +
                         "generating new random centroids.");
 
                 // Pick random centroids so the number of centroids is as desired
