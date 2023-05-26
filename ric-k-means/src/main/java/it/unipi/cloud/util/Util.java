@@ -38,15 +38,13 @@ public class Util {
         for (int i=0; i < numCentroids; i++) {
             oldCentroids[i] = new PointWritable(splitOld[i]);
             newCentroids[i] = new PointWritable(splitNew[i]);
-            // TODO - print oldCentroids[i] --- newCentroids[i]
         }
 
-        for (int i=0; i < numCentroids; i++) {
-            if (oldCentroids[i].distanceFrom(newCentroids[i]) > EPS)
-                return false;
-        }
+        double errorsSum = 0;
+        for (int i=0; i < numCentroids; i++)
+            errorsSum += oldCentroids[i].distanceFrom(newCentroids[i]);
 
-        return true;
+        return errorsSum < EPS;
     }
 
     public static String chooseCentroids(String datasetFile, int numCentroids) throws IOException {
@@ -110,24 +108,28 @@ public class Util {
         return centroids.toString();
     }
 
-    public static String readCentroids(String centroidsFile) throws IOException {
+    public static String readCentroids(String centroidsFile, int numReducer) throws IOException {
         StringBuilder centroids = new StringBuilder();
         String centroidsPath = hadoopBasePath + centroidsFile;
 
         FileSystem fs = FileSystem.get(new Configuration());
-        Path filePath = new Path(centroidsPath + "/part-r-00000");
+        Path[] centroidPaths = new Path[numReducer];
+        for (int i = 0; i < numReducer; i++)
+            centroidPaths[i] = new Path(centroidsPath + "/part-r-0000" + i);
 
-        if (fs.exists(filePath)) {
-            InputStream inputStream = fs.open(filePath);
+        for (Path filePath : centroidPaths) {
+            if (fs.exists(filePath)) {
+                InputStream inputStream = fs.open(filePath);
 
-            String centroidsWithIndex = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-            for (String row : centroidsWithIndex.split("\n"))
-                centroids.append(row.split("\t")[1]).append("\n");
+                String centroidsWithIndex = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+                for (String row : centroidsWithIndex.split("\n"))
+                    centroids.append(row.split("\t")[1]).append("\n");
 
-            // Close the input stream when you're done
-            inputStream.close();
-        } else {
-            throw new FileNotFoundException("File does not exist: " + centroidsPath);
+                // Close the input stream when you're done
+                inputStream.close();
+            } else {
+                throw new FileNotFoundException("File does not exist: " + centroidsPath);
+            }
         }
 
         // Delete temp folder

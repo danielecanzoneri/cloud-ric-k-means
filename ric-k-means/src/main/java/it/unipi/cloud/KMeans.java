@@ -30,16 +30,22 @@ public class KMeans {
 
         String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
         if (otherArgs.length < 3) {
-            System.err.println("Usage: KMeans <number_of_clusters> <input> <output>");
+            System.err.println("Usage: KMeans <number_of_clusters> <input> <output> [<number_of_reducer> <use_of_combiner>]");
             System.exit(1);
         }
         System.out.println("args[0]: <number_of_clusters>="+otherArgs[0]);
         System.out.println("args[1]: <input>="+otherArgs[1]);
         System.out.println("args[2]: <output>="+otherArgs[2]);
-        boolean useCombiner = true;
+        int numReducer = 1;
         if (otherArgs.length == 4) {
-            System.out.println("args[3]: <use_of_combiner>="+otherArgs[3]);
-            useCombiner = Boolean.parseBoolean(otherArgs[3]);
+            System.out.println("args[3]: <number_of_reducer>="+otherArgs[3]);
+            conf.set("mapred.reduce.tasks", otherArgs[3]);
+            numReducer = Integer.parseInt(otherArgs[3]);
+        }
+        boolean useCombiner = true;
+        if (otherArgs.length == 5) {
+            System.out.println("args[4]: <use_of_combiner>="+otherArgs[4]);
+            useCombiner = Boolean.parseBoolean(otherArgs[4]);
         }
 
         String datasetPath = otherArgs[1];
@@ -91,7 +97,7 @@ public class KMeans {
 
             // Keep old centroids in memory to check the stopping condition
             oldCentroids = newCentroids;
-            newCentroids = Util.readCentroids(outputPath);
+            newCentroids = Util.readCentroids(outputPath, numReducer);
 
             // Check if the k-means iteration generated empty clusters
             int numNewCentroids = newCentroids.split("\n").length;
