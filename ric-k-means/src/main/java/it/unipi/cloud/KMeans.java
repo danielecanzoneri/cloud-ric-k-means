@@ -24,6 +24,7 @@ import java.io.OutputStreamWriter;
 
 public class KMeans {
 
+    private static final int maxIter = 100;
     private static final Configuration conf = new Configuration();
 
     public static void main(String[] args) throws Exception {
@@ -110,7 +111,7 @@ public class KMeans {
                 newCentroids += Util.chooseCentroids(datasetPath, emptyClusters);
             }
 
-        } while (!Util.stoppingCondition(oldCentroids, newCentroids));
+        } while (!Util.stoppingCondition(oldCentroids, newCentroids) && iter < maxIter);
 
         double timeInSeconds = (System.nanoTime() - startTime) / 1000000000.0;
 
@@ -122,7 +123,7 @@ public class KMeans {
         FSDataOutputStream out = fs.create(new Path(output + "/centroids.txt"), true);
         BufferedWriter br = new BufferedWriter(new OutputStreamWriter(out));
 
-        br.write("Centroids");
+        br.write("Centroids: ");
         br.newLine();
         br.write(centroids);
         br.newLine();
@@ -133,6 +134,12 @@ public class KMeans {
         br.write("Average time for iteration: ");
         br.write(String.valueOf(Math.round(time / numIterations * 1000) / 1000.0));
         br.newLine();
+        if (numIterations == maxIter) {
+            br.newLine();
+            br.write("!!! KMeans did not converge !!!");
+            br.write("Maximum number of iterations reached: " + numIterations);
+            br.newLine();
+        }
 
         br.close();
         fs.close();
