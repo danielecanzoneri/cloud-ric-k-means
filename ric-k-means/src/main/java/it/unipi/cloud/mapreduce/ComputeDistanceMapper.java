@@ -6,6 +6,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
+import java.rmi.UnexpectedException;
 
 public class ComputeDistanceMapper extends Mapper<LongWritable, Text, LongWritable, PointWritable> {
 
@@ -24,6 +25,8 @@ public class ComputeDistanceMapper extends Mapper<LongWritable, Text, LongWritab
     @Override
     public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
         PointWritable point = new PointWritable(value.toString());
+        if (point.getAttributes().length == 0)
+            return;
 
         // For every centroid compute the distance
         // and return the index of the closest centroid

@@ -6,16 +6,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 fig = plt.figure()
-ax = fig.add_subplot(projection='3d')
+ax = fig.add_subplot()
 
 def generate_dataset(k, d, n, cluster_std=1.0):
-    X, _ = make_blobs(n_samples=n, n_features=d, centers=k,
+    X, _ = make_blobs(n_samples=n, n_features=d, centers=np.array([(-76.128,4.862),(15.764,83.112),(-21.652,-26.235),(37.907,-59.19),(5.776,25.39)]),
     	center_box=(-100.0, 100.0),
     	cluster_std=cluster_std)
     
     np.savetxt('dataset.csv', X, delimiter=',')
 
-    ax.scatter(X[:, 0], X[:, 1], X[:, 2])
+    ax.scatter(X[:100000, 0], X[:100000, 1])
     plt.show()
 
 

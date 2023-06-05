@@ -9,16 +9,14 @@ import org.apache.hadoop.fs.Path;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Util {
 
     private static final double EPS = 1e-4;
     private static final Random random = new Random();
-    private static final String hadoopBasePath = "hdfs://10.1.1.45:9820/user/hadoop/";
+    public static final String hadoopBasePath = "hdfs://10.1.1.45:9820/user/hadoop/";
 
     private static int datasetSize = -1;
 
@@ -27,8 +25,8 @@ public class Util {
         String[] splitNew = _newCentroids.split("\n");
 
         if (splitNew.length != splitOld.length)
-            throw new UnsupportedOperationException("Cannot compare centroids of different dimensions: " +
-                    "old=" + splitNew.length + ", new:" + splitNew.length);
+            throw new UnsupportedOperationException("Cannot compare different number od centroids: " +
+                    "old=" + splitOld.length + ", new=" + splitNew.length);
 
         int numCentroids = splitNew.length;
 
@@ -108,8 +106,9 @@ public class Util {
         return centroids.toString();
     }
 
-    public static String readCentroids(String centroidsFile, int numReducer) throws IOException {
-        StringBuilder centroids = new StringBuilder();
+    public static String readCentroids(String centroidsFile, int numReducer, int numCentroids) throws IOException {
+        // Store centroids with index
+        List<String> centroidsWithIndexes = new ArrayList<>();
         String centroidsPath = hadoopBasePath + centroidsFile;
 
         FileSystem fs = FileSystem.get(new Configuration());
@@ -121,21 +120,28 @@ public class Util {
             if (fs.exists(filePath)) {
                 InputStream inputStream = fs.open(filePath);
 
-                String centroidsWithIndex = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-                for (String row : centroidsWithIndex.split("\n"))
-                    centroids.append(row.split("\t")[1]).append("\n");
+                centroidsWithIndexes.addAll(Arrays.asList(IOUtils.toString(inputStream, StandardCharsets.UTF_8).split("\n")));
 
                 // Close the input stream when you're done
                 inputStream.close();
             } else {
-                throw new FileNotFoundException("File does not exist: " + centroidsPath);
+                throw new FileNotFoundException("File does not exist: " + filePath);
             }
+        }
+
+        // Sort centroids by index
+        String[] centroids = new String[numCentroids];  // Using numCentroids in case some clusters are empty and
+                                                        // centroidsWithIndexes.size() is actually lower than numCentroids
+        for (String centroidWithIndex : centroidsWithIndexes) {
+            String[] split = centroidWithIndex.split("\t");
+            int ind = Integer.parseInt(split[0]);
+            centroids[ind] = split[1];
         }
 
         // Delete temp folder
         fs.delete(new Path(centroidsPath), true);
         fs.close();
 
-        return centroids.toString();
+        return String.join("\n", centroids);
     }
 }
