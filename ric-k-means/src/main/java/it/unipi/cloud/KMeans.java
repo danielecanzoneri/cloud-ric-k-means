@@ -46,8 +46,6 @@ public class KMeans {
         outputOption.setRequired(true); options.addOption(outputOption);
         Option reducerOption = new Option("r", "reducers", true, "number of reducers [default 1]");
         reducerOption.setRequired(false); options.addOption(reducerOption);
-        Option combinerOption = new Option("c", "combiner", true, "use of combiner [default true]");
-        combinerOption.setRequired(false); options.addOption(combinerOption);
         Option centroidsOption = new Option("C", "centroids", true, "initial centroids [default random]");
         centroidsOption.setRequired(false); options.addOption(centroidsOption);
 
@@ -80,12 +78,6 @@ public class KMeans {
             numReducers = Integer.parseInt(cmd.getOptionValue("reducers"));
             System.out.println("<number_of_reducer> = " + numReducers);
             conf.set("mapred.reduce.tasks", String.valueOf(numReducers));
-        }
-        // use of combiner
-        boolean useCombiner = true;
-        if (cmd.hasOption("combiner")) {
-            useCombiner = Boolean.parseBoolean(cmd.getOptionValue("combiner"));
-            System.out.println("<use_of_combiner> = " + useCombiner);
         }
         String centroidsPath = null;
         if (cmd.hasOption("centroids")) {
@@ -126,8 +118,7 @@ public class KMeans {
 
             // set mapper/combiner/reducer
             job.setMapperClass(ComputeDistanceMapper.class);
-            if (useCombiner)
-                job.setCombinerClass(AggregateSamplesCombiner.class);
+            job.setCombinerClass(AggregateSamplesCombiner.class);
             job.setReducerClass(ComputeCentroidsReducer.class);
 
             // define mapper's output key-value

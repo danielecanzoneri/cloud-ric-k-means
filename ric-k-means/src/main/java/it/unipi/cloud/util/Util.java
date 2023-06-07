@@ -106,14 +106,14 @@ public class Util {
         return centroids.toString();
     }
 
-    public static String readCentroids(String centroidsFile, int numReducer, int numCentroids) throws IOException {
+    public static String readCentroids(String centroidsFile, int numReducers, int numCentroids) throws IOException {
         // Store centroids with index
         List<String> centroidsWithIndexes = new ArrayList<>();
         String centroidsPath = hadoopBasePath + centroidsFile;
 
         FileSystem fs = FileSystem.get(new Configuration());
-        Path[] centroidPaths = new Path[numReducer];
-        for (int i = 0; i < numReducer; i++)
+        Path[] centroidPaths = new Path[numReducers];
+        for (int i = 0; i < numReducers; i++)
             centroidPaths[i] = new Path(centroidsPath + "/part-r-0000" + i);
 
         for (Path filePath : centroidPaths) {
